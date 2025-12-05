@@ -76,7 +76,9 @@ function generateDeckFromIdea(idea, style = "General") {
 
 // ---------- API HELPERS ----------
 async function callApiToGenerateDeck(idea, style) {
-  const response = await fetch("http://localhost:3001/api/generate-deck", {
+  const response = await fetch("https://cool-name.loca.lt/api/generate-deck", {
+
+    // ⬆ change this to your Render URL later when backend is deployed
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ idea, style }),
@@ -90,7 +92,9 @@ async function callApiToGenerateDeck(idea, style) {
 }
 
 async function callApiToGenerateImages(frames, style) {
-  const response = await fetch("http://localhost:3001/api/generate-images", {
+  const response = await fetch("https://cool-name.loca.lt/api/generate-images", {
+
+    // ⬆ change this to your Render URL later when backend is deployed
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ frames, style }),
@@ -160,7 +164,21 @@ export default function App() {
   const [isGeneratingImages, setIsGeneratingImages] = useState(false);
   const [shareUrl, setShareUrl] = useState("");
 
+  // ✅ NEW: mobile layout awareness
+  const [isMobile, setIsMobile] = useState(
+    typeof window !== "undefined" ? window.innerWidth <= 768 : false
+  );
+
   const { isListening, supported, toggle } = useVoiceInput(setIdea);
+
+  // Watch screen size for responsive layout
+  useEffect(() => {
+    function handleResize() {
+      setIsMobile(window.innerWidth <= 768);
+    }
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   // Load deck from URL share link or from local storage
   useEffect(() => {
@@ -210,6 +228,7 @@ export default function App() {
     window.print();
   };
 
+  // ✅ IMPROVED: more robust image mapping so images actually show up
   const handleGenerateImages = async () => {
     if (!deck || !deck.storyboardFrames) return;
 
@@ -221,15 +240,20 @@ export default function App() {
 
       console.log("Image API result:", result);
 
+      // Try several possible response shapes:
+      // { frames: [...] }, { images: [...] }, { data: [...] }
       const framesFromApi = result.frames || result.images || result.data || [];
 
       const newFrames = deck.storyboardFrames.map((f, i) => {
         const match = framesFromApi[i];
         if (!match) return f;
 
+        // Handle objects like:
+        // { imageUrl }, { url }, { b64_json }, { image: "..." }
         const url =
           match.imageUrl ||
           match.url ||
+          match.image ||
           (match.b64_json
             ? `data:image/png;base64,${match.b64_json}`
             : undefined);
@@ -323,21 +347,21 @@ export default function App() {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          padding: "1.5rem",
+          padding: isMobile ? "1rem" : "1.5rem",
           animation: "fadeInUp 0.4s ease-out",
         }}
       >
         <Card
           style={{
             width: "100%",
-            maxWidth: "520px",
-            padding: "1.75rem",
+            maxWidth: isMobile ? "100%" : "520px",
+            padding: isMobile ? "1.25rem" : "1.75rem",
           }}
         >
           <h1
             style={{
               margin: 0,
-              fontSize: "1.6rem",
+              fontSize: isMobile ? "1.4rem" : "1.6rem",
               fontWeight: 600,
               textAlign: "center",
               color: ACCENT_DARK,
@@ -493,19 +517,20 @@ export default function App() {
       style={{
         minHeight: "100vh",
         backgroundColor: "transparent",
-        padding: "1.5rem",
+        padding: isMobile ? "1rem" : "1.5rem",
         animation: "fadeInUp 0.4s ease-out",
       }}
     >
       <header
         style={{
           maxWidth: "1120px",
-          margin: "0 auto 1.5rem auto",
+          margin: isMobile ? "0 auto 1rem auto" : "0 auto 1.5rem auto",
           display: "flex",
-          justifyContent: "space-between",
+          justifyContent: isMobile ? "center" : "space-between",
           gap: "1rem",
-          alignItems: "flex-end",
+          alignItems: isMobile ? "center" : "flex-end",
           flexWrap: "wrap",
+          textAlign: isMobile ? "center" : "left",
           color: "#e5e7eb",
         }}
       >
@@ -537,13 +562,22 @@ export default function App() {
         style={{
           maxWidth: "1120px",
           margin: "0 auto",
-          display: "grid",
-          gridTemplateColumns: "minmax(0, 3fr) minmax(0, 1.4fr)",
-          gap: "1.25rem",
+          display: isMobile ? "flex" : "grid",
+          flexDirection: isMobile ? "column" : undefined,
+          gridTemplateColumns: isMobile
+            ? undefined
+            : "minmax(0, 3fr) minmax(0, 1.4fr)",
+          gap: isMobile ? "0.9rem" : "1.25rem",
         }}
       >
         {/* LEFT: Controls + deck */}
-        <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: isMobile ? "0.9rem" : "1.25rem",
+          }}
+        >
           {/* Compact controls (inside a Card) */}
           <Card>
             <div
@@ -555,7 +589,7 @@ export default function App() {
                 flexWrap: "wrap",
               }}
             >
-              <div style={{ flex: 1, minWidth: "180px" }}>
+              <div style={{ flex: 1, minWidth: "160px" }}>
                 <label
                   style={{
                     fontSize: "0.8rem",
@@ -606,7 +640,7 @@ export default function App() {
                   onChange={(e) => setIdea(e.target.value)}
                   style={{
                     width: "100%",
-                    height: "60px",
+                    height: isMobile ? "70px" : "60px",
                     borderRadius: "0.5rem",
                     padding: "0.5rem 0.6rem",
                     border: "1px solid #d1d5db",
@@ -630,6 +664,7 @@ export default function App() {
                 onClick={handleGenerate}
                 disabled={!canGenerate}
                 style={{
+                  flexGrow: 1,
                   padding: "0.5rem 1.1rem",
                   borderRadius: "999px",
                   border: "none",
@@ -827,6 +862,8 @@ export default function App() {
                   justifyContent: "space-between",
                   alignItems: "center",
                   marginBottom: "0.4rem",
+                  gap: "0.5rem",
+                  flexWrap: "wrap",
                 }}
               >
                 <h3
@@ -864,7 +901,11 @@ export default function App() {
                     padding: "0.6rem",
                     marginBottom: "0.6rem",
                     display: "grid",
-                    gridTemplateColumns: f.imageUrl ? "2fr 1.2fr" : "1fr",
+                    gridTemplateColumns: f.imageUrl
+                      ? isMobile
+                        ? "1fr"
+                        : "2fr 1.2fr"
+                      : "1fr",
                     gap: "0.5rem",
                   }}
                 >
@@ -905,6 +946,8 @@ export default function App() {
                           borderRadius: "0.5rem",
                           border: "1px solid #e5e7eb",
                           objectFit: "cover",
+                          maxHeight: "220px",
+                          display: "block",
                         }}
                       />
                     </div>
@@ -1006,7 +1049,7 @@ export default function App() {
           margin: "1rem auto 0",
           fontSize: "0.75rem",
           color: "#d1fae5",
-          textAlign: "right",
+          textAlign: isMobile ? "center" : "right",
           opacity: 0.9,
         }}
       >
