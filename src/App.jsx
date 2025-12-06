@@ -76,7 +76,7 @@ function generateDeckFromIdea(idea, style = "General") {
 
 // ---------- API HELPERS ----------
 async function callApiToGenerateDeck(idea, style) {
-  const response = await fetch("https://cool-name.loca.lt/api/generate-deck", {
+  const response = await fetch("https://aran-api-backend.vercel.app/api/generate-deck", {
 
     // ⬆ change this to your Render URL later when backend is deployed
     method: "POST",
@@ -92,7 +92,7 @@ async function callApiToGenerateDeck(idea, style) {
 }
 
 async function callApiToGenerateImages(frames, style) {
-  const response = await fetch("https://cool-name.loca.lt/api/generate-images", {
+  const response = await fetch("https://aran-api-backend.vercel.app/api/generate-deck", {
 
     // ⬆ change this to your Render URL later when backend is deployed
     method: "POST",
